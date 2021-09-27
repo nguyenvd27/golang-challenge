@@ -4,16 +4,28 @@ import (
 	"encoding/json"
 	"fmt"
 	"golang-coding-challenge/models"
-	"golang-coding-challenge/models/entities"
-	"golang-coding-challenge/transfers"
+	"golang-coding-challenge/usecases"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
-var db *gorm.DB
+var (
+	db                 *gorm.DB
+	transactionUsecase usecases.TransactionUseCase
+)
+
+func checkError(w http.ResponseWriter, err error, message string) {
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{
+			"message": message,
+		})
+		return
+	}
+}
 
 func HomePage(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Homepage worked")
@@ -23,53 +35,48 @@ func GetTransactionsOfAnUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 	queries := r.URL.Query()
-
 	var (
-		transactions     []entities.Transaction
-		query_account_id []int
+		user_id, account_id int
+		err                 error
 	)
 
-	if queries["account_id"] == nil {
-		db.Table("accounts").Select("id").Where("user_id = ?", params["user_id"]).Scan(&query_account_id)
-		db.Preload(clause.Associations).Where("account_id IN ?", query_account_id).Find(&transactions)
-	} else {
-		db.Table("accounts").Select("id").Where("id = ? AND user_id = ?", queries["account_id"], params["user_id"]).Scan(&query_account_id)
-		db.Preload(clause.Associations).Where("account_id IN ?", query_account_id).Find(&transactions)
+	user_id, err = strconv.Atoi(params["user_id"])
+	checkError(w, err, "Invalid User Id")
+
+	if len(queries["account_id"]) > 0 {
+		account_id, err = strconv.Atoi(queries["account_id"][0])
+		checkError(w, err, "Invalid Account Id")
 	}
 
+	transactionJsonList, err := transactionUsecase.GetTransactions(user_id, account_id)
+	checkError(w, err, "Not Found Account")
+
 	w.WriteHeader(http.StatusOK)
-	if len(transactions) > 0 {
-		transactionJsonList := transfers.GetTransactionsJsonList(transactions)
-		json.NewEncoder(w).Encode(transactionJsonList)
-	} else {
-		json.NewEncoder(w).Encode(transactions)
-	}
+	json.NewEncoder(w).Encode(transactionJsonList)
 }
 
 func PostTransactionsOfAnUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 	var (
-		transaction      entities.Transaction
-		query_account_id []int
+		transactionRequest usecases.CreateTransactionRequest
+		user_id            int
+		err                error
 	)
-	json.NewDecoder(r.Body).Decode(&transaction)
 
-	db.Table("accounts").Select("id").Where("id = ? AND user_id = ?", transaction.AccountID, params["user_id"]).Scan(&query_account_id)
-	if len(query_account_id) > 0 {
-		db.Create(&transaction)
-		db.Preload(clause.Associations).Find(&transaction)
-		transactionJson := transfers.GetTransactionsJson(transaction)
-		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(transactionJson)
-	} else {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{
-			"message": "Not Found Account",
-		})
-	}
+	user_id, err = strconv.Atoi(params["user_id"])
+	checkError(w, err, "Invalid User Id")
+
+	json.NewDecoder(r.Body).Decode(&transactionRequest)
+
+	newTransactionJson, err := transactionUsecase.CreateTransaction(transactionRequest, user_id)
+	checkError(w, err, "Not Found Account")
+
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(newTransactionJson)
 }
 
 func init() {
 	db = models.ConnectDB()
+	transactionUsecase = usecases.NewTransactionUsecase(db)
 }
