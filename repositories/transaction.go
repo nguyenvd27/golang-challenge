@@ -1,5 +1,7 @@
 package repositories
 
+//go:generate mockgen -destination=./mock/mock_$GOFILE -source=$GOFILE -package=mock
+
 import (
 	"golang-coding-challenge/models/entities"
 

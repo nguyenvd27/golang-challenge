@@ -1,7 +1,9 @@
 package usecases
 
+//go:generate mockgen -destination=./mock/mock_$GOFILE -source=$GOFILE -package=mock
+
 import (
-	"errors"
+	"fmt"
 	"golang-coding-challenge/models/entities"
 	"golang-coding-challenge/repositories"
 	"golang-coding-challenge/transfers"
@@ -70,5 +72,5 @@ func (uc *transactionUsecase) CreateTransaction(reqBody CreateTransactionRequest
 		return &transactionJson, nil
 	}
 
-	return nil, errors.New("not found user account")
+	return nil, fmt.Errorf("not found user account")
 }

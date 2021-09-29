@@ -1,0 +1,16 @@
+mode: set
+golang-coding-challenge/usecases/transaction.go:30.60,35.2 1 0
+golang-coding-challenge/usecases/transaction.go:37.107,39.16 2 1
+golang-coding-challenge/usecases/transaction.go:43.2,44.16 2 1
+golang-coding-challenge/usecases/transaction.go:48.2,48.27 1 1
+golang-coding-challenge/usecases/transaction.go:53.2,53.43 1 1
+golang-coding-challenge/usecases/transaction.go:39.16,41.3 1 1
+golang-coding-challenge/usecases/transaction.go:44.16,46.3 1 1
+golang-coding-challenge/usecases/transaction.go:48.27,51.3 2 1
+golang-coding-challenge/usecases/transaction.go:56.131,58.16 2 0
+golang-coding-challenge/usecases/transaction.go:62.2,62.26 1 0
+golang-coding-challenge/usecases/transaction.go:75.2,75.50 1 0
+golang-coding-challenge/usecases/transaction.go:58.16,60.3 1 0
+golang-coding-challenge/usecases/transaction.go:62.26,68.17 2 0
+golang-coding-challenge/usecases/transaction.go:71.3,72.31 2 0
+golang-coding-challenge/usecases/transaction.go:68.17,70.4 1 0

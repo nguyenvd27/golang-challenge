@@ -2,6 +2,8 @@ package repositories
 
 import "gorm.io/gorm"
 
+//go:generate mockgen -destination=./mock/mock_$GOFILE -source=$GOFILE -package=mock
+
 type AccountRepo interface {
 	GetAccountIDsByUserIDAccountID(userID, accountID int) ([]int, error)
 }
