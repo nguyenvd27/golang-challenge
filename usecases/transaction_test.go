@@ -6,6 +6,7 @@ import (
 	"golang-coding-challenge/repositories/mock"
 	"golang-coding-challenge/transfers"
 	"golang-coding-challenge/utilities"
+	"reflect"
 	"testing"
 	"time"
 
@@ -354,6 +355,30 @@ func Test_transactionUsecase_CreateTransaction(t *testing.T) {
 
 		if utilities.CompareTransactionJson(result, expected_result) == false || err != expectedErr {
 			t.Errorf("error mismatch [%v] [%v]", result, expected_result)
+		}
+	})
+}
+
+func TestNewTransactionUsecase(t *testing.T) {
+	t.Run("case 1", func(t *testing.T) {
+
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		// input
+		accountRepo := mock.NewMockAccountRepo(mockCtrl)
+		transactionRepo := mock.NewMockTransactionRepo(mockCtrl)
+
+		// output
+		expectedResult := &transactionUsecase{
+			accountRepo:     accountRepo,
+			transactionRepo: transactionRepo,
+		}
+
+		result := NewTransactionUsecase(accountRepo, transactionRepo)
+
+		if reflect.DeepEqual(result, expectedResult) == false {
+			t.Errorf("error mismatch [%v] [%v]", result, expectedResult)
 		}
 	})
 }

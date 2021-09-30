@@ -7,8 +7,6 @@ import (
 	"golang-coding-challenge/models/entities"
 	"golang-coding-challenge/repositories"
 	"golang-coding-challenge/transfers"
-
-	"gorm.io/gorm"
 )
 
 type TransactionUseCase interface {
@@ -27,10 +25,10 @@ type CreateTransactionRequest struct {
 	TransactionType string  `json:"transaction_type"`
 }
 
-func NewTransactionUsecase(db *gorm.DB) TransactionUseCase {
+func NewTransactionUsecase(accountRepo repositories.AccountRepo, transactionRepo repositories.TransactionRepo) TransactionUseCase {
 	return &transactionUsecase{
-		accountRepo:     repositories.NewAccountRepo(db),
-		transactionRepo: repositories.NewTransactionRepo(db),
+		accountRepo:     accountRepo,
+		transactionRepo: transactionRepo,
 	}
 }
 

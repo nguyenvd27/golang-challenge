@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"golang-coding-challenge/models"
+	"golang-coding-challenge/repositories"
 	"golang-coding-challenge/usecases"
 	"net/http"
 	"strconv"
@@ -78,5 +79,7 @@ func PostTransactionsOfAnUser(w http.ResponseWriter, r *http.Request) {
 
 func init() {
 	db = models.ConnectDB()
-	transactionUsecase = usecases.NewTransactionUsecase(db)
+	accountRepo := repositories.NewAccountRepo(db)
+	transactionRepo := repositories.NewTransactionRepo(db)
+	transactionUsecase = usecases.NewTransactionUsecase(accountRepo, transactionRepo)
 }
