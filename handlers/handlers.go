@@ -83,3 +83,44 @@ func init() {
 	transactionRepo := repositories.NewTransactionRepo(db)
 	transactionUsecase = usecases.NewTransactionUsecase(accountRepo, transactionRepo)
 }
+
+func GetTransactionsOfAnUserV2(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
+	queries := r.URL.Query()
+	var (
+		user_id, account_id int
+		err                 error
+		page                int = 1
+		size                int = 5
+	)
+
+	user_id, err = strconv.Atoi(params["user_id"])
+	checkError(w, err, "Invalid User Id")
+
+	if len(queries["account_id"]) > 0 {
+		account_id, err = strconv.Atoi(queries["account_id"][0])
+		checkError(w, err, "Invalid Account Id")
+	}
+
+	if len(queries["account_id"]) > 0 {
+		account_id, err = strconv.Atoi(queries["account_id"][0])
+		checkError(w, err, "Invalid Account Id")
+	}
+
+	if len(queries["page"]) > 0 {
+		page, err = strconv.Atoi(queries["page"][0])
+		checkError(w, err, "Error Argument")
+	}
+
+	if len(queries["size"]) > 0 {
+		size, err = strconv.Atoi(queries["size"][0])
+		checkError(w, err, "Error Argument")
+	}
+
+	transactionJsonList, err := transactionUsecase.GetTransactionsV2(user_id, account_id, page, size)
+	checkError(w, err, "Not Found Account")
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(transactionJsonList)
+}

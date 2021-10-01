@@ -12,6 +12,8 @@ import (
 type TransactionRepo interface {
 	GetTransactionsByAccountIDs(accountIDs []int) ([]entities.Transaction, error)
 	CreateTransaction(trans entities.Transaction) (entities.Transaction, error)
+
+	GetTransactionsWithPaginate(accountIDs []int, page, size int) ([]entities.Transaction, int64, error)
 }
 
 type transactionDB struct {
@@ -40,4 +42,21 @@ func (transaction *transactionDB) CreateTransaction(trans entities.Transaction) 
 	transaction.db.Preload(clause.Associations).Find(&trans)
 
 	return trans, err
+}
+
+func (transaction *transactionDB) GetTransactionsWithPaginate(accountIDs []int, page, size int) ([]entities.Transaction, int64, error) {
+	var (
+		transactions []entities.Transaction
+		err          error
+		total        int64
+	)
+
+	err = transaction.db.Preload(clause.Associations).
+		Where("account_id IN ?", accountIDs).
+		Limit(size).Offset((page - 1) * size).
+		Order("id asc").Find(&transactions).Error
+
+	transaction.db.Table("transactions").Where("account_id IN ?", accountIDs).Count(&total)
+
+	return transactions, total, err
 }

@@ -382,3 +382,211 @@ func TestNewTransactionUsecase(t *testing.T) {
 		}
 	})
 }
+
+func Test_transactionUsecase_GetTransactionsV2(t *testing.T) {
+
+	t.Run("case 1", func(t *testing.T) {
+		// prepare input
+		userID := 1
+		accountID := 1
+		page := 1
+		size := 3
+
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		accountRepo := mock.NewMockAccountRepo(mockCtrl)
+		accountRepo.EXPECT().GetAccountIDsByUserIDAccountID(userID, accountID).Return(
+			[]int{},
+			fmt.Errorf("not found account"),
+		)
+
+		// output
+		var expectedResult *transfers.PaginateData = nil
+		expectedErr := fmt.Errorf("not found account")
+
+		uc := &transactionUsecase{
+			accountRepo:     accountRepo,
+			transactionRepo: nil,
+		}
+
+		result, err := uc.GetTransactionsV2(userID, accountID, page, size)
+
+		if reflect.DeepEqual(result, expectedResult) == false || err.Error() != expectedErr.Error() {
+			t.Errorf("error mismatch [%v] [%v]", err, expectedErr)
+		}
+	})
+
+	t.Run("case 2", func(t *testing.T) {
+		// prepare input
+		userID := 1
+		accountID := 1
+		page := 1
+		size := 3
+
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		accountRepo := mock.NewMockAccountRepo(mockCtrl)
+		accountRepo.EXPECT().GetAccountIDsByUserIDAccountID(userID, accountID).Return(
+			[]int{1},
+			nil,
+		)
+
+		account_ids := []int{1}
+		transactionRepo := mock.NewMockTransactionRepo(mockCtrl)
+		transactionRepo.EXPECT().GetTransactionsWithPaginate(account_ids, page, size).Return(
+			[]entities.Transaction{},
+			int64(0),
+			fmt.Errorf("not found transaction"),
+		)
+
+		// output
+		var expectedResult *transfers.PaginateData = nil
+		expectedErr := fmt.Errorf("not found transaction")
+
+		uc := &transactionUsecase{
+			accountRepo:     accountRepo,
+			transactionRepo: transactionRepo,
+		}
+
+		result, err := uc.GetTransactionsV2(userID, accountID, page, size)
+
+		if reflect.DeepEqual(result, expectedResult) == false || err.Error() != expectedErr.Error() {
+			t.Errorf("error mismatch [%v] [%v]", err, expectedErr)
+		}
+	})
+
+	t.Run("case 3", func(t *testing.T) {
+		// prepare input
+		userID := 1
+		accountID := 1
+		page := 1
+		size := 3
+
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		accountRepo := mock.NewMockAccountRepo(mockCtrl)
+		accountRepo.EXPECT().GetAccountIDsByUserIDAccountID(userID, accountID).Return(
+			[]int{1},
+			nil,
+		)
+
+		account_ids := []int{1}
+		transactionRepo := mock.NewMockTransactionRepo(mockCtrl)
+		transactionRepo.EXPECT().GetTransactionsWithPaginate(account_ids, page, size).Return(
+			[]entities.Transaction{},
+			int64(0),
+			nil,
+		)
+
+		// output
+		var expectedResult *transfers.PaginateData = &transfers.PaginateData{
+			Data:  []transfers.TransactionJson{},
+			Total: int(0),
+			Page:  page,
+		}
+		var expectedErr error = nil
+
+		uc := &transactionUsecase{
+			accountRepo:     accountRepo,
+			transactionRepo: transactionRepo,
+		}
+
+		result, err := uc.GetTransactionsV2(userID, accountID, page, size)
+
+		if reflect.DeepEqual(result, expectedResult) == false || err != expectedErr {
+			t.Errorf("error mismatch [%v] [%v]", err, expectedErr)
+		}
+	})
+
+	t.Run("case 4", func(t *testing.T) {
+		// prepare input
+		userID := 1
+		accountID := 1
+		page := 1
+		size := 2
+
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		accountRepo := mock.NewMockAccountRepo(mockCtrl)
+		accountRepo.EXPECT().GetAccountIDsByUserIDAccountID(userID, accountID).Return(
+			[]int{1},
+			nil,
+		)
+
+		account_ids := []int{1}
+		transactionRepo := mock.NewMockTransactionRepo(mockCtrl)
+		timeTmp := time.Date(2021, 9, 23, 11, 12, 16, 0, time.Local)
+		transactionRepo.EXPECT().GetTransactionsWithPaginate(account_ids, page, size).Return(
+			[]entities.Transaction{
+				{
+					Model: gorm.Model{
+						ID:        1,
+						CreatedAt: timeTmp,
+						UpdatedAt: timeTmp,
+					},
+					Amount:          1234.56,
+					TransactionType: "deposit",
+					AccountID:       1,
+					Account: entities.Account{
+						Bank: "VCB",
+					},
+				},
+				{
+					Model: gorm.Model{
+						ID:        2,
+						CreatedAt: timeTmp,
+						UpdatedAt: timeTmp,
+					},
+					Amount:          2345.67,
+					TransactionType: "withdraw",
+					AccountID:       1,
+					Account: entities.Account{
+						Bank: "VCB",
+					},
+				},
+			},
+			int64(5),
+			nil,
+		)
+
+		// output
+		var expectedResult *transfers.PaginateData = &transfers.PaginateData{
+			Data: []transfers.TransactionJson{
+				{
+					Id:              1,
+					AccountID:       1,
+					Amount:          1234.56,
+					Bank:            "VCB",
+					TransactionType: "deposit",
+					CreatedAt:       timeTmp.String(),
+				},
+				{
+					Id:              2,
+					AccountID:       1,
+					Amount:          2345.67,
+					Bank:            "VCB",
+					TransactionType: "withdraw",
+					CreatedAt:       timeTmp.String(),
+				},
+			},
+			Total: int(5),
+			Page:  page,
+		}
+		var expectedErr error = nil
+
+		uc := &transactionUsecase{
+			accountRepo:     accountRepo,
+			transactionRepo: transactionRepo,
+		}
+
+		result, err := uc.GetTransactionsV2(userID, accountID, page, size)
+
+		if reflect.DeepEqual(result, expectedResult) == false || err != expectedErr {
+			t.Errorf("error mismatch [%v] [%v]", err, expectedErr)
+		}
+	})
+}

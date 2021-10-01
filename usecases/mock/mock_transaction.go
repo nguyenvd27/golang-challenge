@@ -64,3 +64,18 @@ func (mr *MockTransactionUseCaseMockRecorder) GetTransactions(userID, accountID 
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransactions", reflect.TypeOf((*MockTransactionUseCase)(nil).GetTransactions), userID, accountID)
 }
+
+// GetTransactionsV2 mocks base method.
+func (m *MockTransactionUseCase) GetTransactionsV2(userID, accountID, page, size int) (*transfers.PaginateData, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTransactionsV2", userID, accountID, page, size)
+	ret0, _ := ret[0].(*transfers.PaginateData)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTransactionsV2 indicates an expected call of GetTransactionsV2.
+func (mr *MockTransactionUseCaseMockRecorder) GetTransactionsV2(userID, accountID, page, size interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransactionsV2", reflect.TypeOf((*MockTransactionUseCase)(nil).GetTransactionsV2), userID, accountID, page, size)
+}

@@ -12,6 +12,8 @@ import (
 type TransactionUseCase interface {
 	GetTransactions(userID, accountID int) ([]transfers.TransactionJson, error)
 	CreateTransaction(reqBody CreateTransactionRequest, userID int) (*transfers.TransactionJson, error)
+
+	GetTransactionsV2(userID, accountID, page, size int) (*transfers.PaginateData, error)
 }
 
 type transactionUsecase struct {
@@ -71,4 +73,35 @@ func (uc *transactionUsecase) CreateTransaction(reqBody CreateTransactionRequest
 	}
 
 	return nil, fmt.Errorf("not found user account")
+}
+
+func (uc *transactionUsecase) GetTransactionsV2(userID, accountID, page, size int) (*transfers.PaginateData, error) {
+	account_ids, err := uc.accountRepo.GetAccountIDsByUserIDAccountID(userID, accountID)
+	if err != nil {
+		return nil, err
+	}
+
+	transactions, total, err := uc.transactionRepo.GetTransactionsWithPaginate(account_ids, page, size)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(transactions) > 0 {
+		transactionJsonList := transfers.GetTransactionsJsonList(transactions)
+
+		paginateData := &transfers.PaginateData{
+			Data:  transactionJsonList,
+			Total: int(total),
+			Page:  page,
+		}
+		return paginateData, nil
+	}
+
+	paginateData := &transfers.PaginateData{
+		Data:  []transfers.TransactionJson{},
+		Total: int(total),
+		Page:  page,
+	}
+
+	return paginateData, nil
 }

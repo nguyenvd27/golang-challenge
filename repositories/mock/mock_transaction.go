@@ -63,3 +63,19 @@ func (mr *MockTransactionRepoMockRecorder) GetTransactionsByAccountIDs(accountID
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransactionsByAccountIDs", reflect.TypeOf((*MockTransactionRepo)(nil).GetTransactionsByAccountIDs), accountIDs)
 }
+
+// GetTransactionsWithPaginate mocks base method.
+func (m *MockTransactionRepo) GetTransactionsWithPaginate(accountIDs []int, page, size int) ([]entities.Transaction, int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTransactionsWithPaginate", accountIDs, page, size)
+	ret0, _ := ret[0].([]entities.Transaction)
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetTransactionsWithPaginate indicates an expected call of GetTransactionsWithPaginate.
+func (mr *MockTransactionRepoMockRecorder) GetTransactionsWithPaginate(accountIDs, page, size interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransactionsWithPaginate", reflect.TypeOf((*MockTransactionRepo)(nil).GetTransactionsWithPaginate), accountIDs, page, size)
+}
