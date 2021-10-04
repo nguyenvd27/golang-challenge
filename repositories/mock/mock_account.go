@@ -5,6 +5,7 @@
 package mock
 
 import (
+	entities "golang-coding-challenge/models/entities"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -46,4 +47,34 @@ func (m *MockAccountRepo) GetAccountIDsByUserIDAccountID(userID, accountID int) 
 func (mr *MockAccountRepoMockRecorder) GetAccountIDsByUserIDAccountID(userID, accountID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountIDsByUserIDAccountID", reflect.TypeOf((*MockAccountRepo)(nil).GetAccountIDsByUserIDAccountID), userID, accountID)
+}
+
+// GetAccountUser mocks base method.
+func (m *MockAccountRepo) GetAccountUser(userID, accountID int) (entities.Account, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAccountUser", userID, accountID)
+	ret0, _ := ret[0].(entities.Account)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAccountUser indicates an expected call of GetAccountUser.
+func (mr *MockAccountRepoMockRecorder) GetAccountUser(userID, accountID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountUser", reflect.TypeOf((*MockAccountRepo)(nil).GetAccountUser), userID, accountID)
+}
+
+// UpdateAccountUser mocks base method.
+func (m *MockAccountRepo) UpdateAccountUser(accountUser entities.Account, newBalance float64) (entities.Account, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateAccountUser", accountUser, newBalance)
+	ret0, _ := ret[0].(entities.Account)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateAccountUser indicates an expected call of UpdateAccountUser.
+func (mr *MockAccountRepoMockRecorder) UpdateAccountUser(accountUser, newBalance interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAccountUser", reflect.TypeOf((*MockAccountRepo)(nil).UpdateAccountUser), accountUser, newBalance)
 }

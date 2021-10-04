@@ -54,13 +54,35 @@ func (uc *transactionUsecase) GetTransactions(userID, accountID int) ([]transfer
 }
 
 func (uc *transactionUsecase) CreateTransaction(reqBody CreateTransactionRequest, userID int) (*transfers.TransactionJson, error) {
-	account_ids, err := uc.accountRepo.GetAccountIDsByUserIDAccountID(userID, reqBody.AccountID)
+	accountUser, err := uc.accountRepo.GetAccountUser(userID, reqBody.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(account_ids) > 0 {
-		new_transaction, err := uc.transactionRepo.CreateTransaction(entities.Transaction{
+	if reqBody.TransactionType == "withdraw" {
+		if reqBody.Amount > accountUser.Balance {
+			return nil, fmt.Errorf("not enough balance")
+		} else {
+			newTransaction, err := uc.transactionRepo.CreateTransaction(entities.Transaction{
+				AccountID:       uint(reqBody.AccountID),
+				Amount:          reqBody.Amount,
+				TransactionType: reqBody.TransactionType,
+			})
+			if err != nil {
+				return nil, err
+			}
+			newBalance := accountUser.Balance - reqBody.Amount
+			_, err = uc.accountRepo.UpdateAccountUser(accountUser, newBalance)
+
+			if err != nil {
+				return nil, err
+			}
+
+			transactionJson := transfers.GetTransactionsJson(newTransaction)
+			return &transactionJson, nil
+		}
+	} else if reqBody.TransactionType == "deposit" {
+		newTransaction, err := uc.transactionRepo.CreateTransaction(entities.Transaction{
 			AccountID:       uint(reqBody.AccountID),
 			Amount:          reqBody.Amount,
 			TransactionType: reqBody.TransactionType,
@@ -68,11 +90,18 @@ func (uc *transactionUsecase) CreateTransaction(reqBody CreateTransactionRequest
 		if err != nil {
 			return nil, err
 		}
-		transactionJson := transfers.GetTransactionsJson(new_transaction)
+		newBalance := accountUser.Balance + reqBody.Amount
+		_, err = uc.accountRepo.UpdateAccountUser(accountUser, newBalance)
+
+		if err != nil {
+			return nil, err
+		}
+
+		transactionJson := transfers.GetTransactionsJson(newTransaction)
 		return &transactionJson, nil
 	}
 
-	return nil, fmt.Errorf("not found user account")
+	return nil, fmt.Errorf("can not create transaction")
 }
 
 func (uc *transactionUsecase) GetTransactionsV2(userID, accountID, page, size int) (*transfers.PaginateData, error) {

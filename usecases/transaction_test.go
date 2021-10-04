@@ -195,13 +195,13 @@ func Test_transactionUsecase_CreateTransaction(t *testing.T) {
 		defer mockCtrl.Finish()
 
 		accountRepo := mock.NewMockAccountRepo(mockCtrl)
-		accountRepo.EXPECT().GetAccountIDsByUserIDAccountID(userID, reqBody.AccountID).Return(
-			[]int{},
+		accountRepo.EXPECT().GetAccountUser(userID, reqBody.AccountID).Return(
+			entities.Account{},
 			fmt.Errorf("not found account"),
 		)
 
 		// output
-		var expected_result *transfers.TransactionJson = nil
+		var expectedResult *transfers.TransactionJson = nil
 		expectedErr := fmt.Errorf("not found account")
 
 		uc := &transactionUsecase{
@@ -211,7 +211,7 @@ func Test_transactionUsecase_CreateTransaction(t *testing.T) {
 
 		result, err := uc.CreateTransaction(reqBody, userID)
 
-		if utilities.CompareTransactionJson(result, expected_result) == false || err.Error() != expectedErr.Error() {
+		if utilities.CompareTransactionJson(result, expectedResult) == false || err.Error() != expectedErr.Error() {
 			t.Errorf("error mismatch [%v] [%v]", err, expectedErr)
 		}
 	})
@@ -221,22 +221,32 @@ func Test_transactionUsecase_CreateTransaction(t *testing.T) {
 		userID := 1
 		reqBody := CreateTransactionRequest{
 			AccountID:       1,
-			Amount:          1234.56,
-			TransactionType: "deposit",
+			Amount:          1234,
+			TransactionType: "withdraw",
 		}
 
 		mockCtrl := gomock.NewController(t)
 		defer mockCtrl.Finish()
 
 		accountRepo := mock.NewMockAccountRepo(mockCtrl)
-		accountRepo.EXPECT().GetAccountIDsByUserIDAccountID(userID, reqBody.AccountID).Return(
-			[]int{},
+		timeTmp := time.Now()
+		accountRepo.EXPECT().GetAccountUser(userID, reqBody.AccountID).Return(
+			entities.Account{
+				Model: gorm.Model{
+					ID:        1,
+					CreatedAt: timeTmp,
+					UpdatedAt: timeTmp,
+				},
+				Name:    "RoryAccount",
+				Bank:    "VCB",
+				Balance: 100,
+			},
 			nil,
 		)
 
 		// output
-		var expected_result *transfers.TransactionJson = nil
-		expectedErr := fmt.Errorf("not found user account")
+		var expectedResult *transfers.TransactionJson = nil
+		expectedErr := fmt.Errorf("not enough balance")
 
 		uc := &transactionUsecase{
 			accountRepo:     accountRepo,
@@ -245,7 +255,7 @@ func Test_transactionUsecase_CreateTransaction(t *testing.T) {
 
 		result, err := uc.CreateTransaction(reqBody, userID)
 
-		if utilities.CompareTransactionJson(result, expected_result) == false || err.Error() != expectedErr.Error() {
+		if utilities.CompareTransactionJson(result, expectedResult) == false || err.Error() != expectedErr.Error() {
 			t.Errorf("error mismatch [%v] [%v]", err, expectedErr)
 		}
 	})
@@ -255,16 +265,27 @@ func Test_transactionUsecase_CreateTransaction(t *testing.T) {
 		userID := 1
 		reqBody := CreateTransactionRequest{
 			AccountID:       1,
-			Amount:          1234.56,
-			TransactionType: "deposit",
+			Amount:          1234,
+			TransactionType: "withdraw",
 		}
 
 		mockCtrl := gomock.NewController(t)
 		defer mockCtrl.Finish()
 
 		accountRepo := mock.NewMockAccountRepo(mockCtrl)
-		accountRepo.EXPECT().GetAccountIDsByUserIDAccountID(userID, reqBody.AccountID).Return(
-			[]int{1},
+		timeTmp := time.Now()
+		accountUser := entities.Account{
+			Model: gorm.Model{
+				ID:        1,
+				CreatedAt: timeTmp,
+				UpdatedAt: timeTmp,
+			},
+			Name:    "RoryAccount",
+			Bank:    "VCB",
+			Balance: 10000,
+		}
+		accountRepo.EXPECT().GetAccountUser(userID, reqBody.AccountID).Return(
+			accountUser,
 			nil,
 		)
 
@@ -275,12 +296,14 @@ func Test_transactionUsecase_CreateTransaction(t *testing.T) {
 			TransactionType: reqBody.TransactionType,
 		}).Return(
 			entities.Transaction{},
-			fmt.Errorf("can not create transaction"),
+			fmt.Errorf("can not transaction"),
 		)
 
 		// output
-		var expected_result *transfers.TransactionJson = nil
-		expectedErr := fmt.Errorf("can not create transaction")
+		var (
+			expectedResult *transfers.TransactionJson = nil
+			expectedErr    error                      = fmt.Errorf("can not transaction")
+		)
 
 		uc := &transactionUsecase{
 			accountRepo:     accountRepo,
@@ -289,8 +312,8 @@ func Test_transactionUsecase_CreateTransaction(t *testing.T) {
 
 		result, err := uc.CreateTransaction(reqBody, userID)
 
-		if utilities.CompareTransactionJson(result, expected_result) == false || err.Error() != expectedErr.Error() {
-			t.Errorf("error mismatch [%v] [%v]", result, expected_result)
+		if utilities.CompareTransactionJson(result, expectedResult) == false || err.Error() != expectedErr.Error() {
+			t.Errorf("error mismatch [%v] [%v]", err, expectedErr)
 		}
 	})
 
@@ -299,21 +322,32 @@ func Test_transactionUsecase_CreateTransaction(t *testing.T) {
 		userID := 1
 		reqBody := CreateTransactionRequest{
 			AccountID:       1,
-			Amount:          1234.56,
-			TransactionType: "deposit",
+			Amount:          1234,
+			TransactionType: "withdraw",
 		}
 
 		mockCtrl := gomock.NewController(t)
 		defer mockCtrl.Finish()
 
 		accountRepo := mock.NewMockAccountRepo(mockCtrl)
-		accountRepo.EXPECT().GetAccountIDsByUserIDAccountID(userID, reqBody.AccountID).Return(
-			[]int{1},
+		timeTmp := time.Now()
+		accountUser := entities.Account{
+			Model: gorm.Model{
+				ID:        1,
+				CreatedAt: timeTmp,
+				UpdatedAt: timeTmp,
+			},
+			Name:    "RoryAccount",
+			Bank:    "VCB",
+			Balance: 10000,
+		}
+		accountRepo.EXPECT().GetAccountUser(userID, reqBody.AccountID).Return(
+			accountUser,
 			nil,
 		)
+		accountRepo.EXPECT().UpdateAccountUser(accountUser, 10000-reqBody.Amount)
 
 		transactionRepo := mock.NewMockTransactionRepo(mockCtrl)
-		timeTmp := time.Now()
 		transactionRepo.EXPECT().CreateTransaction(entities.Transaction{
 			AccountID:       uint(reqBody.AccountID),
 			Amount:          reqBody.Amount,
@@ -329,17 +363,229 @@ func Test_transactionUsecase_CreateTransaction(t *testing.T) {
 				TransactionType: reqBody.TransactionType,
 				AccountID:       uint(reqBody.AccountID),
 				Account: entities.Account{
-					Bank: "VCB",
+					Name:    "RoryAccount",
+					Bank:    "VCB",
+					Balance: 10000 - reqBody.Amount,
 				},
 			},
 			nil,
 		)
 
 		// output
-		var expected_result *transfers.TransactionJson = &transfers.TransactionJson{
+		var expectedResult *transfers.TransactionJson = &transfers.TransactionJson{
 			Id:              20,
 			AccountID:       1,
-			Amount:          1234.56,
+			Amount:          1234,
+			Bank:            "VCB",
+			TransactionType: "withdraw",
+			CreatedAt:       timeTmp.String(),
+		}
+		var expectedErr error = nil
+
+		uc := &transactionUsecase{
+			accountRepo:     accountRepo,
+			transactionRepo: transactionRepo,
+		}
+
+		result, err := uc.CreateTransaction(reqBody, userID)
+
+		if utilities.CompareTransactionJson(result, expectedResult) == false || err != expectedErr {
+			t.Errorf("error mismatch [%v] [%v]", err, expectedErr)
+		}
+	})
+
+	t.Run("case 4.2", func(t *testing.T) {
+		// prepare input
+		userID := 1
+		reqBody := CreateTransactionRequest{
+			AccountID:       1,
+			Amount:          1234,
+			TransactionType: "withdraw",
+		}
+
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		accountRepo := mock.NewMockAccountRepo(mockCtrl)
+		timeTmp := time.Now()
+		accountUser := entities.Account{
+			Model: gorm.Model{
+				ID:        1,
+				CreatedAt: timeTmp,
+				UpdatedAt: timeTmp,
+			},
+			Name:    "RoryAccount",
+			Bank:    "VCB",
+			Balance: 10000,
+		}
+		accountRepo.EXPECT().GetAccountUser(userID, reqBody.AccountID).Return(
+			accountUser,
+			nil,
+		)
+
+		transactionRepo := mock.NewMockTransactionRepo(mockCtrl)
+		transactionRepo.EXPECT().CreateTransaction(entities.Transaction{
+			AccountID:       uint(reqBody.AccountID),
+			Amount:          reqBody.Amount,
+			TransactionType: reqBody.TransactionType,
+		}).Return(
+			entities.Transaction{
+				Model: gorm.Model{
+					ID:        20,
+					CreatedAt: timeTmp,
+					UpdatedAt: timeTmp,
+				},
+				Amount:          reqBody.Amount,
+				TransactionType: reqBody.TransactionType,
+				AccountID:       uint(reqBody.AccountID),
+				Account: entities.Account{
+					Name:    "RoryAccount",
+					Bank:    "VCB",
+					Balance: 10000 - reqBody.Amount,
+				},
+			},
+			nil,
+		)
+
+		accountRepo.EXPECT().UpdateAccountUser(accountUser, 10000-reqBody.Amount).Return(
+			accountUser,
+			fmt.Errorf("can not update account user"),
+		)
+
+		// output
+		var (
+			expectedResult *transfers.TransactionJson = nil
+			expectedErr    error                      = fmt.Errorf("can not update account user")
+		)
+
+		uc := &transactionUsecase{
+			accountRepo:     accountRepo,
+			transactionRepo: transactionRepo,
+		}
+
+		result, err := uc.CreateTransaction(reqBody, userID)
+
+		if utilities.CompareTransactionJson(result, expectedResult) == false || err.Error() != expectedErr.Error() {
+			t.Errorf("error mismatch [%v] [%v]", err, expectedErr)
+		}
+	})
+
+	t.Run("case 5", func(t *testing.T) {
+		// prepare input
+		userID := 1
+		reqBody := CreateTransactionRequest{
+			AccountID:       1,
+			Amount:          1234,
+			TransactionType: "deposit",
+		}
+
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		accountRepo := mock.NewMockAccountRepo(mockCtrl)
+		timeTmp := time.Now()
+		accountUser := entities.Account{
+			Model: gorm.Model{
+				ID:        1,
+				CreatedAt: timeTmp,
+				UpdatedAt: timeTmp,
+			},
+			Name:    "RoryAccount",
+			Bank:    "VCB",
+			Balance: 10000,
+		}
+		accountRepo.EXPECT().GetAccountUser(userID, reqBody.AccountID).Return(
+			accountUser,
+			nil,
+		)
+
+		transactionRepo := mock.NewMockTransactionRepo(mockCtrl)
+		transactionRepo.EXPECT().CreateTransaction(entities.Transaction{
+			AccountID:       uint(reqBody.AccountID),
+			Amount:          reqBody.Amount,
+			TransactionType: reqBody.TransactionType,
+		}).Return(
+			entities.Transaction{},
+			fmt.Errorf("can not transaction"),
+		)
+
+		// output
+		var (
+			expectedResult *transfers.TransactionJson = nil
+			expectedErr    error                      = fmt.Errorf("can not transaction")
+		)
+
+		uc := &transactionUsecase{
+			accountRepo:     accountRepo,
+			transactionRepo: transactionRepo,
+		}
+
+		result, err := uc.CreateTransaction(reqBody, userID)
+
+		if utilities.CompareTransactionJson(result, expectedResult) == false || err.Error() != expectedErr.Error() {
+			t.Errorf("error mismatch [%v] [%v]", err, expectedErr)
+		}
+	})
+
+	t.Run("case 6", func(t *testing.T) {
+		// prepare input
+		userID := 1
+		reqBody := CreateTransactionRequest{
+			AccountID:       1,
+			Amount:          1234,
+			TransactionType: "deposit",
+		}
+
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		accountRepo := mock.NewMockAccountRepo(mockCtrl)
+		timeTmp := time.Now()
+		accountUser := entities.Account{
+			Model: gorm.Model{
+				ID:        1,
+				CreatedAt: timeTmp,
+				UpdatedAt: timeTmp,
+			},
+			Name:    "RoryAccount",
+			Bank:    "VCB",
+			Balance: 10000,
+		}
+		accountRepo.EXPECT().GetAccountUser(userID, reqBody.AccountID).Return(
+			accountUser,
+			nil,
+		)
+		accountRepo.EXPECT().UpdateAccountUser(accountUser, 10000+reqBody.Amount)
+
+		transactionRepo := mock.NewMockTransactionRepo(mockCtrl)
+		transactionRepo.EXPECT().CreateTransaction(entities.Transaction{
+			AccountID:       uint(reqBody.AccountID),
+			Amount:          reqBody.Amount,
+			TransactionType: reqBody.TransactionType,
+		}).Return(
+			entities.Transaction{
+				Model: gorm.Model{
+					ID:        20,
+					CreatedAt: timeTmp,
+					UpdatedAt: timeTmp,
+				},
+				Amount:          reqBody.Amount,
+				TransactionType: reqBody.TransactionType,
+				AccountID:       uint(reqBody.AccountID),
+				Account: entities.Account{
+					Name:    "RoryAccount",
+					Bank:    "VCB",
+					Balance: 10000 + reqBody.Amount,
+				},
+			},
+			nil,
+		)
+
+		// output
+		var expectedResult *transfers.TransactionJson = &transfers.TransactionJson{
+			Id:              20,
+			AccountID:       1,
+			Amount:          1234,
 			Bank:            "VCB",
 			TransactionType: "deposit",
 			CreatedAt:       timeTmp.String(),
@@ -353,8 +599,131 @@ func Test_transactionUsecase_CreateTransaction(t *testing.T) {
 
 		result, err := uc.CreateTransaction(reqBody, userID)
 
-		if utilities.CompareTransactionJson(result, expected_result) == false || err != expectedErr {
-			t.Errorf("error mismatch [%v] [%v]", result, expected_result)
+		if utilities.CompareTransactionJson(result, expectedResult) == false || err != expectedErr {
+			t.Errorf("error mismatch [%v] [%v]", err, expectedErr)
+		}
+	})
+
+	t.Run("case 6.2", func(t *testing.T) {
+		// prepare input
+		userID := 1
+		reqBody := CreateTransactionRequest{
+			AccountID:       1,
+			Amount:          1234,
+			TransactionType: "deposit",
+		}
+
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		accountRepo := mock.NewMockAccountRepo(mockCtrl)
+		timeTmp := time.Now()
+		accountUser := entities.Account{
+			Model: gorm.Model{
+				ID:        1,
+				CreatedAt: timeTmp,
+				UpdatedAt: timeTmp,
+			},
+			Name:    "RoryAccount",
+			Bank:    "VCB",
+			Balance: 10000,
+		}
+		accountRepo.EXPECT().GetAccountUser(userID, reqBody.AccountID).Return(
+			accountUser,
+			nil,
+		)
+
+		transactionRepo := mock.NewMockTransactionRepo(mockCtrl)
+		transactionRepo.EXPECT().CreateTransaction(entities.Transaction{
+			AccountID:       uint(reqBody.AccountID),
+			Amount:          reqBody.Amount,
+			TransactionType: reqBody.TransactionType,
+		}).Return(
+			entities.Transaction{
+				Model: gorm.Model{
+					ID:        20,
+					CreatedAt: timeTmp,
+					UpdatedAt: timeTmp,
+				},
+				Amount:          reqBody.Amount,
+				TransactionType: reqBody.TransactionType,
+				AccountID:       uint(reqBody.AccountID),
+				Account: entities.Account{
+					Name:    "RoryAccount",
+					Bank:    "VCB",
+					Balance: 10000 - reqBody.Amount,
+				},
+			},
+			nil,
+		)
+
+		accountRepo.EXPECT().UpdateAccountUser(accountUser, 10000+reqBody.Amount).Return(
+			accountUser,
+			fmt.Errorf("can not update account user"),
+		)
+
+		// output
+		var (
+			expectedResult *transfers.TransactionJson = nil
+			expectedErr    error                      = fmt.Errorf("can not update account user")
+		)
+
+		uc := &transactionUsecase{
+			accountRepo:     accountRepo,
+			transactionRepo: transactionRepo,
+		}
+
+		result, err := uc.CreateTransaction(reqBody, userID)
+
+		if utilities.CompareTransactionJson(result, expectedResult) == false || err.Error() != expectedErr.Error() {
+			t.Errorf("error mismatch [%v] [%v]", err, expectedErr)
+		}
+	})
+
+	t.Run("case 7", func(t *testing.T) {
+		// prepare input
+		userID := 1
+		reqBody := CreateTransactionRequest{
+			AccountID:       1,
+			Amount:          1234,
+			TransactionType: "notfound",
+		}
+
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		accountRepo := mock.NewMockAccountRepo(mockCtrl)
+		timeTmp := time.Now()
+		accountUser := entities.Account{
+			Model: gorm.Model{
+				ID:        1,
+				CreatedAt: timeTmp,
+				UpdatedAt: timeTmp,
+			},
+			Name:    "RoryAccount",
+			Bank:    "VCB",
+			Balance: 10000,
+		}
+		accountRepo.EXPECT().GetAccountUser(userID, reqBody.AccountID).Return(
+			accountUser,
+			nil,
+		)
+
+		// output
+		var (
+			expectedResult *transfers.TransactionJson = nil
+			expectedErr    error                      = fmt.Errorf("can not create transaction")
+		)
+
+		uc := &transactionUsecase{
+			accountRepo:     accountRepo,
+			transactionRepo: nil,
+		}
+
+		result, err := uc.CreateTransaction(reqBody, userID)
+
+		if utilities.CompareTransactionJson(result, expectedResult) == false || err.Error() != expectedErr.Error() {
+			t.Errorf("error mismatch [%v] [%v]", err, expectedErr)
 		}
 	})
 }

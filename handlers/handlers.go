@@ -71,7 +71,15 @@ func PostTransactionsOfAnUser(w http.ResponseWriter, r *http.Request) {
 	json.NewDecoder(r.Body).Decode(&transactionRequest)
 
 	newTransactionJson, err := transactionUsecase.CreateTransaction(transactionRequest, user_id)
-	checkError(w, err, "Not Found Account")
+	if err != nil {
+		if err.Error() == fmt.Errorf("not enough balance").Error() {
+			checkError(w, err, "not enough balance")
+		} else if err.Error() == fmt.Errorf("can not create transaction").Error() {
+			checkError(w, err, "can not create transaction")
+		} else {
+			checkError(w, err, "Not Found Account")
+		}
+	}
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(newTransactionJson)
