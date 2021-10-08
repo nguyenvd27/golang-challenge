@@ -9,11 +9,12 @@ COPY go.sum ./
 RUN go mod download
 
 COPY . .
-# COPY ./entrypoint.sh /entrypoint.sh
 
-RUN go build -o /main
+RUN go build -o ./main
 
 EXPOSE 8001
 
-CMD [ "/main" ]
-# CMD ["sh", "-c", "USER_NAME=root PASSWORD= /main"]
+COPY wait-for-it.sh /wait-for-it.sh
+RUN chmod +x /wait-for-it.sh
+
+# CMD [ "./main" ]

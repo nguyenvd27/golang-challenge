@@ -10,32 +10,18 @@ services:
     networks:
       - default
     restart: always
-    command:
-      [
-        "mysqld",
-        "--character-set-server=utf8mb4",
-        "--collation-server=utf8mb4_unicode_ci",
-      ]
     ports:
-      # <Port exposed> : < MySQL Port running inside container>
       - "3306:3306"
-    # setting some env vars to create the DB
     environment:
       MYSQL_RANDOM_ROOT_PASSWORD: "secret"
       MYSQL_DATABASE: "golang_coding_challenge"
       MYSQL_USER: "tester"
       MYSQL_PASSWORD: "secret"
-      # OR if you want to use "root" as the user, just these two lines
-      # MYSQL_ROOT_PASSWORD: ${DATABASE_PASSWORD}
-      # MYSQL_DATABASE: ${DATABASE_NAME}
-
-    # we mount a data volume to make sure we don't lose data
     volumes:
       - mysql_data:/var/lib/mysql
     command: --default-authentication-plugin=mysql_native_password
   app:
-    container_name:  "app_challenge"
-    # we want to use the image which is build from our Dockerfile
+    container_name:  "app"
     build:
       context: .
       dockerfile: Dockerfile
@@ -44,13 +30,9 @@ services:
     networks:
       - default
     restart: always
-    # we are depending on the mysql backend
     depends_on:
       - db
-    # We mount the working dir into the container, handy for development
-    # This is what makes the hot reloading work inside of a Docker container
-    volumes:
-      - .:/app/
+    command: ["/wait-for-it.sh", "db:3306", "-t", "40", "--", "./main"]
 
 networks:
   default:
